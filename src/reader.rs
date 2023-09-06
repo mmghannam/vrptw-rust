@@ -4,23 +4,25 @@ use std::path::Path;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Customer {
-    number: u32,
-    x: u32,
-    y: u32,
-    demand: u32,
-    ready_time: u32,
-    due_date: u32,
-    service_time: u32,
+    number: usize,
+    x: usize,
+    y: usize,
+    demand: usize,
+    ready_time: usize,
+    due_date: usize,
+    service_time: usize,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct SolomonInstance {
+pub struct Instance {
     n_vehicles: usize,
     capacity: usize,
     customers: Vec<Customer>,
+    start_depot: usize,
+    end_depot: usize,
 }
 
-pub fn read_solomon(path: &str) -> Result<SolomonInstance, io::Error> {
+pub fn read_solomon(path: &str) -> Result<Instance, io::Error> {
     let mut n_vehicles: usize = 0;
     let mut capacity: usize = 0;
     let mut customers = Vec::new();
@@ -70,13 +72,13 @@ pub fn read_solomon(path: &str) -> Result<SolomonInstance, io::Error> {
         if is_customer_section {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() == 7 {
-                let number: u32 = parts[0].parse().unwrap();
-                let x: u32 = parts[1].parse().unwrap();
-                let y: u32 = parts[2].parse().unwrap();
-                let demand: u32 = parts[3].parse().unwrap();
-                let ready_time: u32 = parts[4].parse().unwrap();
-                let due_date: u32 = parts[5].parse().unwrap();
-                let service_time: u32 = parts[6].parse().unwrap();
+                let number: usize = parts[0].parse().unwrap();
+                let x: usize = parts[1].parse().unwrap();
+                let y: usize = parts[2].parse().unwrap();
+                let demand: usize = parts[3].parse().unwrap();
+                let ready_time: usize = parts[4].parse().unwrap();
+                let due_date: usize = parts[5].parse().unwrap();
+                let service_time: usize = parts[6].parse().unwrap();
                 customers.push(Customer {
                     number,
                     x,
@@ -95,10 +97,19 @@ pub fn read_solomon(path: &str) -> Result<SolomonInstance, io::Error> {
     assert!(capacity > 0);
     assert!(customers.len() > 0);
 
-    Ok(SolomonInstance {
+    let mut end_depot_cust = customers[0].clone(); // end_depot
+    end_depot_cust.number = customers.len();
+    customers.push(end_depot_cust); 
+
+    let start_depot = customers[0].number;
+    let end_depot = customers[customers.len() - 1].number;
+
+    Ok(Instance {
         n_vehicles,
         capacity,
-        customers: customers[1..].to_vec(),
+        customers,
+        start_depot,
+        end_depot,
     })
 }
 
@@ -111,6 +122,8 @@ mod tests {
         let instance = read_solomon("data/solomon/C101.100.txt").unwrap();
         assert_eq!(instance.n_vehicles, 25);
         assert_eq!(instance.capacity, 200);
-        assert_eq!(instance.customers.len(), 100);
+        assert_eq!(instance.customers.len(), 102);
+        assert_eq!(instance.start_depot, instance.customers.first().unwrap().number);
+        assert_eq!(instance.end_depot, instance.customers.last().unwrap().number);
     }
 }
